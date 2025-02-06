@@ -32,3 +32,17 @@ colData(rse_gene_SRP095512)[
   grepl("^sra_attribute", colnames(colData(rse_gene_SRP095512)))
 ]
 
+## Formato correcto en el que debemos tener la informacion
+## Pasar de character a numeric o factor
+rse_gene_SRP095512$sra_attribute.disease_state <- factor(tolower(rse_gene_SRP095512$sra_attribute.disease_state))
+
+rse_gene_SRP095512$sra_attribute.gender <- factor(rse_gene_SRP095512$sra_attribute.gender)
+
+## Resumen de las variables de interés
+summary(as.data.frame(colData(rse_gene_SRP095512)[
+  ,
+  grepl("^sra_attribute.[gender|disease_state]", colnames(colData(rse_gene_SRP095512)))
+]))
+
+
+
