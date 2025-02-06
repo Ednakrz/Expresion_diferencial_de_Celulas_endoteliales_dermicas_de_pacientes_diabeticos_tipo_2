@@ -19,3 +19,16 @@ rse_gene_SRP095512 <- create_rse(proj_info)
 
 ## Explora el objeto RSE
 rse_gene_SRP095512
+
+## Convirtamos las cuentas por nucleotido a cuentas por lectura
+## usando compute_read_counts().
+assay(rse_gene_SRP095512, "counts") <- compute_read_counts(rse_gene_SRP095512)
+
+## Visualizar la informacion de los atributos del objeto "rse_gene_SRP095512"
+
+rse_gene_SRP095512 <- expand_sra_attributes(rse_gene_SRP095512)
+colData(rse_gene_SRP095512)[
+  ,
+  grepl("^sra_attribute", colnames(colData(rse_gene_SRP095512)))
+]
+
