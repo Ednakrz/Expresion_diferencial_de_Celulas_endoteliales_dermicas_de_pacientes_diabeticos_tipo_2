@@ -8,6 +8,8 @@
 
 Este proyecto tiene como objetivo analizar la expresión diferencial de genes en células endoteliales de personas diabéticas y sanas, utilizando datos de RNA-seq obtenidos a través del paquete [Recount3](https://rna.recount.bio/) de [bioconductor](https://bioconductor.org/). Utilizamos herramientas bioinformáticas para identificar genes diferencialmente expresados y visualizamos los resultados con gráficos y heatmaps.
 
+Para mayor información del proyecto, favor de leer el [reporte](https://github.com/Ednakrz/Expresion_diferencial_de_Celulas_endoteliales_dermicas_de_pacientes_diabeticos_tipo_2/blob/master/Reporte_Analisis_Diferencial.pdf) proporcionado en este repocitorio.  
+
 ## Datos
 
 - Número de identificación de los datos en Recount3 : **SRP095512**
