@@ -12,15 +12,15 @@ output:
 
 # Introducción 
 
-La prevalencia de diabetes mellitus tipo 2 (DT2) aumenta constantemente y se han identificado diversos factores de riesgo como la obesidad, el envejecimiento, los estados nutricionales y la inactividad física, además de predisposiciones genéticas en diferentes poblaciones. Las consecuencias de la alta glucosa en sangre incluyen vasos sanguíneos dañados, lo que lleva a arteriosclerosis y microangiopatías diabéticas crónicas. 
+La prevalencia de diabetes mellitus tipo 2 (DT2) aumenta constantemente y se han identificado diversos factores de riesgo como la obesidad, el envejecimiento, los estados nutricionales y la inactividad física, además de predisposiciones genéticas en diferentes poblaciones. Las consecuencias de la alta glucosa en sangre incluyen vasos sanguíneos dañados, lo que lleva a arteriosclerosis y microangiopatías diabéticas crónicas.[1] 
 
-Para obtener las muestras y realizar el análisis con los datos obtenidos se aislaron células endoteliales dérmicas de pacientes diabéticos (Pat) e individuos de control (Ctrl) y se realizaron RNASeq para comparar genes expresados ​​diferencialmente. Diseño general: Se tomaron muestras quirúrgicas de piel humana de pacientes diabéticos tipo 2 y pacientes no diabéticos.**Cita** https://jhubiostatistics.shinyapps.io/recount3-study-explorer/
+Para obtener las muestras y realizar el análisis con los datos obtenidos se aislaron células endoteliales dérmicas de pacientes diabéticos (Pat) e individuos de control (Ctrl) y se realizaron RNASeq para comparar genes expresados diferencialmente. Diseño general: Se tomaron muestras quirúrgicas de piel humana de pacientes diabéticos tipo 2 y pacientes no diabéticos.[1]
 
-Este proyecto tiene como objetivo analizar la expresión diferencial de genes en células endoteliales de personas diabéticas y sanas, utilizando datos de RNA-seq obtenidos a través del paquete Recount3 de bioconductor. Utilizamos herramientas bioinformáticas para identificar genes diferencialmente expresados y visualizamos los resultados con gráficos y heatmaps. Con la finalidad de tener una propuesta biológica de los cambios observados en la expresión de los genes. 
+Este proyecto tiene como objetivo analizar la expresión diferencial de genes en células endoteliales de personas diabéticas y sanas, utilizando datos de RNA-seq obtenidos a través del paquete Recount3[2] de bioconductor[3]. Utilizamos herramientas bioinformáticas para identificar genes diferencialmente expresados y visualizamos los resultados con gráficos y heatmaps. Con la finalidad de tener una propuesta biológica de los cambios observados en la expresión de los genes. 
 
 # Datos
 - Número de identificación de los datos en Recount3 : **SRP095512**
-- GEO accession a los datos : **GSE92724** 
+- GEO accession[4] a los datos : **GSE92724** 
 
 # Cargar los paquetes necesarios para todo el análisis
 
@@ -208,28 +208,27 @@ ComplexHeatmap::pheatmap(
 )
 ```
 
-```{r}
-## Conviertiendo los valores de Gender a colores
-col.gender <- df$sra_attribute.gender
-levels(col.gender) <- brewer.pal(nlevels(col.gender), "Dark2")
 
-col.gender <- as.character(col.gender)
+# Interpretación biológica de los resultados
 
-## MDS por genero
-plotMDS(vGene$E, labels = df$sra_attribute.gender, col = col.gender)
-```
+La expresión genética en las células epiteliales de personas con diabetes puede verse afectada por factores como la variación genética, la epigenética y la resistencia a la insulina[5]. Además de se ha comprobado que la insulinna juega un papel clave en la activación o inactivación de determinados genes, por lo que no es de extrañar que exista una diferencia en la expresión genética cuando está presente la enfermedad y cuando no. 
 
-```{r}
-## Conviertiendo los valores de Disease a colores
-col.disease <- df$sra_attribute.disease_state
-levels(col.disease) <- brewer.pal(nlevels(col.disease), "Dark2")
+En el análisis anterior se observó una clara diferencia en la expresión genética de las muestras con la enfermedad y las que no, contrastada con el género de los pacientes de las que fueron tomadas. 
 
-col.disease <- as.character(col.disease)
+Existe una mayor expresión en los pacientes diabéticos masculinos, en comparación de los pacietes diabéticos femeninos, teniendo estos una expresión, aunque no tan débil, sí en menor cantidad de genes expresados. Esto podría indicar un efecto del sexo en la expresión génica.
 
-## MDS por estado de salud
-plotMDS(vGene$E, labels = df$sra_attribute.disease_state, col = col.disease)
-```
+Por otro lado, se observa una mayor expresión genética en las muestras de los pacientes enfermos, en comparación con los sanos. Esto sugiere que ciertos genes están regulados diferencialmente en la diabetes.
 
+Si hay genes altamente expresados solo en diabéticos o solo en controles sanos, podrían ser biomarcadores relevantes para la enfermedad.
+
+
+# Bibliografía 
+
+1. https://jhubiostatistics.shinyapps.io/recount3-study-explorer/
+2. https://bioconductor.org/packages/release/bioc/html/genefilter.html
+3. https://rna.recount.bio/
+4. https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE92724
+5. https://www.dreamgenics.com/2022/04/04/papel-de-la-genetica-en-la-diabetes-mellitus/#:~:text=tipos%20de%20diabetes-,Diabetes%20polig%C3%A9nicas,a%20desarrollar%20diabetes%20tipo%202.
 
 
 ```{r setup, include=FALSE}
