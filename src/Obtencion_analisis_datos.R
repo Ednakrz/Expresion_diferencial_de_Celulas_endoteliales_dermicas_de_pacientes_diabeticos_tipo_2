@@ -57,9 +57,9 @@ with(colData(rse_gene_SRP095512),
             sra_attribute.disease_state,
             summary))
 
-# Plot the distribution of the assigned gene proportion
+
 # Grafica de la distribución de la proporción de genes asignados
 hist(rse_gene_SRP095512$assigned_gene_prop, col = "orange")
 
-# Guardad los datos sin filtrar, en caso de querer recuperarlos despúes
+# Guardad los datos sin filtrar, en caso de querer recuperarlos despues
 rse_gene_SRP095512_unfiltered <- rse_gene_SRP095512
