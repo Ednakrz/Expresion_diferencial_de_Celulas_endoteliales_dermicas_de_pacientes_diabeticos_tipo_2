@@ -1,32 +1,238 @@
 ---
-title: "Analisis"
+title: "Reporte del Análisis de la expresión diferencial de células endoteliales dérmicas de pacientes diabéticos tipo 2"
 author: "Edna Karen Rivera Zagal"
 date: "2025-02-09"
 output:
   pdf_document: default
-  html_document: default
+  html_document: 
+    toc: true
+    toc_depth: 2
 ---
+
+
+# Introducción 
+
+La prevalencia de diabetes mellitus tipo 2 (DT2) aumenta constantemente y se han identificado diversos factores de riesgo como la obesidad, el envejecimiento, los estados nutricionales y la inactividad física, además de predisposiciones genéticas en diferentes poblaciones. Las consecuencias de la alta glucosa en sangre incluyen vasos sanguíneos dañados, lo que lleva a arteriosclerosis y microangiopatías diabéticas crónicas. 
+
+Para obtener las muestras y realizar el análisis con los datos obtenidos se aislaron células endoteliales dérmicas de pacientes diabéticos (Pat) e individuos de control (Ctrl) y se realizaron RNASeq para comparar genes expresados ​​diferencialmente. Diseño general: Se tomaron muestras quirúrgicas de piel humana de pacientes diabéticos tipo 2 y pacientes no diabéticos.**Cita** https://jhubiostatistics.shinyapps.io/recount3-study-explorer/
+
+Este proyecto tiene como objetivo analizar la expresión diferencial de genes en células endoteliales de personas diabéticas y sanas, utilizando datos de RNA-seq obtenidos a través del paquete Recount3 de bioconductor. Utilizamos herramientas bioinformáticas para identificar genes diferencialmente expresados y visualizamos los resultados con gráficos y heatmaps. Con la finalidad de tener una propuesta biológica de los cambios observados en la expresión de los genes. 
+
+# Datos
+- Número de identificación de los datos en Recount3 : **SRP095512**
+- GEO accession a los datos : **GSE92724** 
+
+# Cargar los paquetes necesarios para todo el análisis
+
+```{r}
+library("recount3")
+library("edgeR") # BiocManager::install("edgeR", update = FALSE)
+library("ggplot2")
+library("limma")
+library("pheatmap")
+library("RColorBrewer")
+```
+
+# Obtención y análisis de los datos 
+
+```{r}
+## Revisemos todos los proyectos con datos de humano en recount3
+human_projects <- available_projects()
+
+## Identificador de mi proyecto de interes:SRP095512
+##Obtencion del proyecto de interes
+proj_info <- subset(
+  human_projects,
+  project == "SRP095512" & project_type == "data_sources"
+)
+
+```
+
+
+```{r}
+## create_rse Crea un objeto de tipo RangedSummarizedExperiment (RSE)
+## con la información a nivel de genes
+rse_gene_SRP095512 <- create_rse(proj_info)
+
+## Explorar el objeto RSE
+rse_gene_SRP095512
+```
+
+```{r}
+## Convirtamos las cuentas por nucleotido a cuentas por lectura
+## usando compute_read_counts().
+assay(rse_gene_SRP095512, "counts") <- compute_read_counts(rse_gene_SRP095512)
+
+## Visualizar la informacion de los atributos del objeto "rse_gene_SRP095512"
+
+rse_gene_SRP095512 <- expand_sra_attributes(rse_gene_SRP095512)
+colData(rse_gene_SRP095512)[
+  ,
+  grepl("^sra_attribute", colnames(colData(rse_gene_SRP095512)))
+]
+```
+
+```{r}
+## Formato correcto en el que debemos tener la informacion
+## Pasar de character a numeric o factor
+rse_gene_SRP095512$sra_attribute.disease_state <- factor(tolower(rse_gene_SRP095512$sra_attribute.disease_state))
+
+rse_gene_SRP095512$sra_attribute.gender <- factor(rse_gene_SRP095512$sra_attribute.gender)
+
+## Resumen de las variables de interés
+summary(as.data.frame(colData(rse_gene_SRP095512)[
+  ,
+  grepl("^sra_attribute.[gender|disease_state]", colnames(colData(rse_gene_SRP095512)))
+]))
+```
+
+```{r}
+# Checar la calidad de los datos
+rse_gene_SRP095512$assigned_gene_prop <-
+  rse_gene_SRP095512$recount_qc.gene_fc_count_all.assigned /
+  rse_gene_SRP095512$recount_qc.gene_fc_count_all.total
+summary(rse_gene_SRP095512$assigned_gene_prop)
+```
+
+```{r}
+# Observar la diferencia entre las muestras
+with(colData(rse_gene_SRP095512),
+     tapply(assigned_gene_prop,
+            sra_attribute.disease_state,
+            summary))
+
+# Grafica de la distribucion de los genes asignados 
+hist(rse_gene_SRP095512$assigned_gene_prop, col = "orange")
+
+# Guardad los datos sin filtrar, en caso de querer recuperarlos despues
+rse_gene_SRP095512_unfiltered <- rse_gene_SRP095512
+```
+
+
+# Normalización de los datos
+
+```{r}
+# Normalización de los datos
+dge <- DGEList(
+  counts = assay(rse_gene_SRP095512, "counts"),
+  genes = rowData(rse_gene_SRP095512)
+)
+dge <- calcNormFactors(dge)
+```
+
+# Análisis de la expresión diferencial
+
+
+```{r}
+## Creacion de un boxplot para analizar la distribución de los genes en muestras
+## de pacientes enfermos y sanos
+
+ggplot(as.data.frame(colData(rse_gene_SRP095512)), aes(y = assigned_gene_prop, x = sra_attribute.disease_state)) +
+  geom_boxplot() +
+  theme_bw(base_size = 20) +
+  ylab("Assigned Gene Prop") +
+  xlab("Disaese_state")
+```
+
+```{r}
+# Modelo estadístico
+
+mod <- model.matrix(~ sra_attribute.gender +sra_attribute.disease_state + assigned_gene_prop,
+                    data = colData(rse_gene_SRP095512)
+)
+colnames(mod)
+```
+
+```{r}
+## Usamos limma para realizar el análisis de expresión diferencial
+
+vGene <- voom(dge, mod, plot = TRUE)
+
+eb_results <- eBayes(lmFit(vGene))
+
+de_results <- topTable(
+  eb_results,
+  coef = 2,
+  number = nrow(rse_gene_SRP095512),
+  sort.by = "none"
+)
+dim(de_results)
+
+```
+
+```{r}
+## Genes diferencialmente expresados con FDR < 5%
+table(de_results$adj.P.Val < 0.05)
+
+## Visualicemos los resultados estadísticos
+plotMA(eb_results, coef = 3)
+```
+
+```{r}
+## Volcano plot Gender
+volcanoplot(eb_results, coef = 2, highlight = 3, names = de_results$gene_name)
+de_results[de_results$gene_name %in% c("TTY14", "RPS4Y1", "RP11-331"), ]
+```
+
+```{r}
+## Volcao plot Disaese State
+volcanoplot(eb_results, coef = 3, highlight = 3, names = de_results$gene_name)
+de_results[de_results$gene_name %in% c("WNK2", "NUD111", "FAM83H"), ]
+```
+
+
+## Visualizando la expresion diferencial a traves de un Heatmap
+
+```{r}
+## Extraer valores de los genes de interés
+exprs_heatmap <- vGene$E[rank(de_results$adj.P.Val) <= 50, ]
+
+## Creemos una tabla con información de las muestras
+## y con nombres de columnas más amigables
+df <- as.data.frame(colData(rse_gene_SRP095512)[, c("sra_attribute.gender", "sra_attribute.disease_state")])
+colnames(df) <- c( "Gender", "disease_state")
+```
+
+```{r}
+## Hagamos un heatmap
+
+
+ComplexHeatmap::pheatmap(
+  exprs_heatmap,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_rownames = FALSE,
+  show_colnames = FALSE,
+  annotation_col = df,
+  scale = "row"
+)
+```
+
+```{r}
+## Conviertiendo los valores de Gender a colores
+col.gender <- df$sra_attribute.gender
+levels(col.gender) <- brewer.pal(nlevels(col.gender), "Dark2")
+
+col.gender <- as.character(col.gender)
+
+## MDS por genero
+plotMDS(vGene$E, labels = df$sra_attribute.gender, col = col.gender)
+```
+
+```{r}
+## Conviertiendo los valores de Disease a colores
+col.disease <- df$sra_attribute.disease_state
+levels(col.disease) <- brewer.pal(nlevels(col.disease), "Dark2")
+
+col.disease <- as.character(col.disease)
+
+## MDS por estado de salud
+plotMDS(vGene$E, labels = df$sra_attribute.disease_state, col = col.disease)
+```
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
